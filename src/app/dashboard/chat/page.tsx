@@ -153,6 +153,46 @@ export default function DashboardChatPage() {
     // FREE-CHAT MODE (BEFORE ASSESSMENT)
     // ============================================
     if (chatMode === "free-chat") {
+
+      // User confirms understanding → ask readiness
+      if (
+        messageText.toLowerCase().includes("understand") ||
+        messageText.toLowerCase().includes("got it") ||
+        messageText.toLowerCase().includes("makes sense")
+      ) {
+        addAiMessage(
+          language === "pidgin"
+            ? "Sharp! 👍 You don understand now.\n\nYou ready make we start the questions, or you still get more questions about insurance?"
+            : "Great! 👍 Glad it makes sense.\n\nAre you ready to start the questions, or do you have more questions about insurance?",
+          ["Yes, let's start 🚀", "I have more questions"]
+        );
+        return;
+      }
+
+      // User chooses to start assessment
+      if (
+        messageText.toLowerCase().includes("yes") ||
+        messageText.toLowerCase().includes("start")
+      ) {
+        setChatMode("assessment");
+        askNextQuestion(0);
+        return;
+      }
+
+      // User wants to ask more questions
+      if (messageText.toLowerCase().includes("more question")) {
+        addAiMessage(
+          language === "pidgin"
+            ? "No wahala 😊 Ask me anything about insurance."
+            : "No problem 😊 Ask me anything about insurance.",
+          undefined,
+          true
+        );
+        return;
+      }
+
+
+
       // Handle "I'm ready! Let's start 🚀"
       if (messageText.toLowerCase().includes("ready") || messageText.toLowerCase().includes("start") || messageText.includes("🚀")) {
         setChatMode("assessment");
