@@ -1,18 +1,39 @@
-'use client';
+// app/dashboard/layout.tsx
+"use client";
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { MessageCircle, BarChart3, Shield, Menu, X, Home, Globe, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { UserButton, useClerk } from '@clerk/nextjs'; // ← added useClerk
+import { UserButton, useClerk } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
+import dynamic from 'next/dynamic';
+
+// ============================================
+// FIX #5: RADIX HYDRATION ISSUE
+// ============================================
+// Import DropdownMenu dynamically with SSR disabled
+// This prevents server/client ID mismatch
+const DropdownMenu = dynamic(
+  () => import('@/components/ui/dropdown-menu').then(mod => mod.DropdownMenu),
+  { ssr: false }
+);
+
+const DropdownMenuTrigger = dynamic(
+  () => import('@/components/ui/dropdown-menu').then(mod => mod.DropdownMenuTrigger),
+  { ssr: false }
+);
+
+const DropdownMenuContent = dynamic(
+  () => import('@/components/ui/dropdown-menu').then(mod => mod.DropdownMenuContent),
+  { ssr: false }
+);
+
+const DropdownMenuItem = dynamic(
+  () => import('@/components/ui/dropdown-menu').then(mod => mod.DropdownMenuItem),
+  { ssr: false }
+);
 
 const navItems = [
   { title: 'Chat with AI', path: '/dashboard/chat', icon: MessageCircle },
@@ -30,9 +51,15 @@ export default function DashboardLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<Language>('pidgin');
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isMounted, setIsMounted] = useState(false); // Fix #5: Client-only rendering flag
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useClerk(); // ← Clerk sign-out function
+  const { signOut } = useClerk();
+
+  // Fix #5: Ensure client-side rendering
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Show loader on navigation
   useEffect(() => {
@@ -46,9 +73,12 @@ export default function DashboardLayout({
 
   const handleLanguageChange = (lang: Language) => {
     setSelectedLanguage(lang);
+    // Optionally: Save to localStorage or context
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('preferredLanguage', lang);
+    }
   };
 
-  // Handle nav clicks with loader
   const handleNavClick = (path: string) => {
     if (path === pathname) return;
     setIsNavigating(true);
@@ -56,16 +86,10 @@ export default function DashboardLayout({
     router.push(path);
   };
 
-  // Special handler for "Back to Home" → sign out + redirect
   const handleBackToHome = async () => {
     setIsNavigating(true);
     setSidebarOpen(false);
-    
-    // Sign out the user
     await signOut({ redirectUrl: '/' });
-    
-    // Router.push is not needed — signOut already redirects
-    // But we keep loader visible briefly
     setTimeout(() => setIsNavigating(false), 800);
   };
 
@@ -148,7 +172,8 @@ export default function DashboardLayout({
                       {item.title}
                     </button>
 
-                    {isChat && (
+                    {/* Fix #5: Only render dropdown after mount (client-only) */}
+                    {isChat && isMounted && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
@@ -181,7 +206,7 @@ export default function DashboardLayout({
               })}
             </nav>
 
-            {/* Back to Home – now signs out */}
+            {/* Back to Home */}
             <div className="p-5 border-t border-sidebar-border mt-auto">
               <button
                 onClick={handleBackToHome}

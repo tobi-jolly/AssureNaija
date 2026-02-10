@@ -138,3 +138,31 @@
     box-shadow: 0 0 40px -10px hsl(12 76% 48% / 0.3);
   }
 }
+
+/* Add this to your src/app/globals.css file */
+
+/* Smooth fade-in animation for chat messages */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Optional: Pulse animation for typing dots (already works with Tailwind but can be customized) */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
